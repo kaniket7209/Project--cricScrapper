@@ -2,9 +2,12 @@
 const request = require('request');
 const cheerio = require('cheerio');
 const chalk = require('chalk');
+const fs = require('fs');
+const xlsx = require('xlsx');
+const path = require('path');
 const { opensshCipherInfo } = require('sshpk');
 
-function geturl(url){
+function geturl(url) {
     request(url, cb);
 
 }
@@ -70,11 +73,60 @@ function extractdetails(html) {
                 let sixes = $(allCols[6]).text().trim();
                 let sr = $(allCols[7]).text().trim();
                 console.log(`${playerName}     { ${runs} - ${balls} - ${fours} - ${sixes} - ${sr} }`)
+                processPlayer(teamName, oppName, playerName, runs, balls, fours, sixes, sr, venue, date, result)
+
+
             }
         }
     }
 }
+function processPlayer(teamName, oppName, playerName, runs, balls, fours, sixes, sr, venue, date, result) {
+    let teamPath = path.join(__dirname,"ipl",teamName);
+    dirCreater(teamPath);
+    let filePath= path.join(teamPath ,playerName+".xlsx");
+    let content = excelReader(filePath,playerName);
+    let playerObj = {
+        "teamName" : teamName,
+        "playerName":playerName,
+        "runs":runs,
+        "balls":balls,
+        "fours":fours,
+        "sixes":sixes,
+        "sr":sr,
+        "oppName":oppName,
+        "venue":venue,
+        "date":date,
+        "result":result
+    }
+    content.push(playerObj);
+    excelWriter(filePath,content,playerName);
+}
 
-module.exports={
-    geturlkey:geturl
+function dirCreater(filepath) {
+    if (fs.existsSync(filepath) == false) {
+        fs.mkdirSync(filepath);
+    }
+}
+function excelWriter(filePath, json, sheetName) {
+    //creates new workbook
+    let newwb = xlsx.utils.book_new();
+    let newws = xlsx.utils.json_to_sheet(json);
+    xlsx.utils.book_append_sheet(newwb, newws, sheetName);
+    xlsx.writeFile(newwb, filePath);
+}
+function excelReader(filePath, sheetName) {
+    // //creates new sheet - (data -> excel format )
+    // // add sheet(newwb,ws,sheet name)
+    // // file path
+    // read
+    if (fs.existsSync(filePath) == false) {
+        return [];
+    }
+    let wb = xlsx.readFile(filePath);
+    let exceldata = wb.Sheets[sheetName];//sheetr name inside wb
+    let ans = xlsx.utils.sheet_to_json(exceldata);
+    return ans;
+}
+module.exports = {
+    geturlkey: geturl
 }
