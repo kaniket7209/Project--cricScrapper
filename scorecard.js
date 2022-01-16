@@ -5,7 +5,6 @@ const chalk = require('chalk');
 const fs = require('fs');
 const xlsx = require('xlsx');
 const path = require('path');
-const { opensshCipherInfo } = require('sshpk');
 
 function geturl(url) {
     request(url, cb);
